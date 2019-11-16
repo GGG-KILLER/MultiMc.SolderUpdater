@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "MultiMc.SolderUpdater": {
+      "commandName": "Project",
+      "commandLineArgs": "\"https://mctest.fgthou.se/\" \"fgthousetemptest\" \".\""
+    }
+  }
+}
