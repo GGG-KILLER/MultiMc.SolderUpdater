@@ -10,8 +10,9 @@ using System.Threading.Tasks;
 
 namespace MultiMc.SolderUpdater
 {
-    internal class Program
+    internal static class Program
     {
+        private static readonly Version updaterVersion = new Version(1, 1, 0);
         private static readonly TimingLogger logger;
 
         static Program()
@@ -107,7 +108,7 @@ namespace MultiMc.SolderUpdater
                     using (var jreader = new JsonTextReader(reader))
                         localState = new JsonSerializer().Deserialize<LocalState>(jreader);
 
-                    if (localState.Value.ModpackVersion.Equals(modpackInfo.LatestBuild, StringComparison.OrdinalIgnoreCase))
+                    if (localState.Value.UpdaterVersion >= updaterVersion && localState.Value.ModpackVersion.Equals(modpackInfo.LatestBuild, StringComparison.OrdinalIgnoreCase))
                     {
                         logger.LogInformation("Modpack is up to date.");
                         return 0;
@@ -147,6 +148,7 @@ namespace MultiMc.SolderUpdater
                     {
                         if (localModState.Version.Equals(mod.Version, StringComparison.OrdinalIgnoreCase))
                         {
+                            localMods.Add(localModState.Name, localModState);
                             logger.LogInformation($"Mod {mod.Name} is up to date.");
                             continue;
                         }
@@ -194,7 +196,7 @@ namespace MultiMc.SolderUpdater
                 }
             }
 
-            localState = new LocalState(modpackInfo.LatestBuild, localMods.ToImmutable());
+            localState = new LocalState(updaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable());
             using (logger.BeginOperation("Saving version to file"))
                 File.WriteAllText(localCopyStateFile, JsonConvert.SerializeObject(localState, Formatting.Indented));
 
