@@ -112,7 +112,7 @@ namespace MultiMc.SolderUpdater
                     using (var jreader = new JsonTextReader(reader))
                         localState = new JsonSerializer().Deserialize<LocalState>(jreader);
 
-                    // Both v1.0.0 and v1.0.1 had a flaw where a local file could be missing if the
+                    // Both v1.0.0 and v1.1.0 had a flaw where a local file could be missing if the
                     // mod got deleted but a file with the same name got added in another mod
                     if (localState.Value.UpdaterVersion < new Version("1.2.0"))
                     {
