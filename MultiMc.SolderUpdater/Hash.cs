@@ -21,33 +21,7 @@ namespace MultiMc.SolderUpdater
             return builder.ToString();
         }
 
-        public static Boolean AreEqual(Byte[] digest1, Byte[] digest2)
-        {
-            if (digest1.Length != digest2.Length)
-                return false;
-
-            var areEqual = true;
-            for (var i = 0; i < digest1.Length; i++)
-            {
-                areEqual &= (digest1[i] ^ digest2[i]) == 0;
-            }
-            return areEqual;
-        }
-
-        public static Boolean AreEqual(String digest1, String digest2)
-        {
-            if (digest1.Length != digest2.Length)
-                return false;
-
-            digest1 = digest1.ToUpperInvariant();
-            digest2 = digest2.ToUpperInvariant();
-
-            var areEqual = true;
-            for (var i = 0; i < digest1.Length; i++)
-            {
-                areEqual &= (digest1[i] ^ digest2[i]) == 0;
-            }
-            return areEqual;
-        }
+        public static Boolean AreEqual(String digest1, String digest2) =>
+            digest1.Equals(digest2, StringComparison.OrdinalIgnoreCase);
     }
 }
