@@ -1,4 +1,4 @@
-using GUtils.Timing;
+﻿using GUtils.Timing;
 using MultiMc.SolderUpdater.Solder;
 using MultiMc.SolderUpdater.Solder.Responses;
 using Newtonsoft.Json;
@@ -13,7 +13,7 @@ namespace MultiMc.SolderUpdater
 {
     internal static class Program
     {
-        private static readonly Version updaterVersion = new Version(1, 1, 0);
+        private static readonly Version updaterVersion = new Version("1.2.0");
         private static readonly TimingLogger logger;
 
         static Program()
@@ -112,7 +112,22 @@ namespace MultiMc.SolderUpdater
                     using (var jreader = new JsonTextReader(reader))
                         localState = new JsonSerializer().Deserialize<LocalState>(jreader);
 
-                    if (localState.Value.UpdaterVersion >= updaterVersion && localState.Value.ModpackVersion.Equals(modpackInfo.LatestBuild, StringComparison.OrdinalIgnoreCase))
+                    // Both v1.0.0 and v1.0.1 had a flaw where a local file could be missing if the
+                    // mod got deleted but a file with the same name got added in another mod
+                    if (localState.Value.UpdaterVersion < new Version("1.2.0"))
+                    {
+                        // Redownload all mods
+                        using (logger.BeginScope("Deleting all mods because of updater version update", false))
+                        {
+                            foreach (LocalModState mod in localState.Value.LocalMods.Values)
+                            {
+                                DeleteLocalMod(mod);
+                            }
+                            localState = new LocalState(updaterVersion, localState.Value.ModpackVersion, ImmutableDictionary<String, LocalModState>.Empty);
+                        }
+                    }
+
+                    if (localState?.ModpackVersion.Equals(modpackInfo.LatestBuild, StringComparison.OrdinalIgnoreCase) is true)
                     {
                         logger.LogInformation("Modpack is up to date.");
                         return 0;
