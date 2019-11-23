@@ -71,7 +71,7 @@ namespace MultiMc.SolderUpdater
             }
 
             var instancePath = args[2];
-            var localCopyStateFile = Path.Combine(instancePath, "solder-modpack.lock");
+            var localStateFile = Path.Combine(instancePath, "solder-modpack.lock");
             if (!Directory.Exists(instancePath))
             {
                 logger.LogError("The instance path provided does not exist.");
@@ -106,9 +106,9 @@ namespace MultiMc.SolderUpdater
             {
                 modpackInfo = await client.GetModpackInfoAsync(modpackSlug).ConfigureAwait(false);
 
-                if (File.Exists(localCopyStateFile))
+                if (File.Exists(localStateFile))
                 {
-                    using (var reader = new StreamReader(localCopyStateFile))
+                    using (var reader = new StreamReader(localStateFile))
                     using (var jreader = new JsonTextReader(reader))
                         localState = new JsonSerializer().Deserialize<LocalState>(jreader);
 
@@ -136,6 +136,18 @@ namespace MultiMc.SolderUpdater
                 logger.LogError("Unable to get modpack build:");
                 logger.LogError(ex.ToString());
                 return 1;
+            }
+
+            if (localState.HasValue)
+            {
+                foreach (LocalModState localMod in localState.Value.LocalMods.Values)
+                {
+                    if (!modpackBuild.Mods.Any(m => m.Name == localMod.Name))
+                    {
+                        logger.LogInformation($"Mod {localMod.Name} no longer exists.");
+                        DeleteLocalMod(localMod);
+                    }
+                }
             }
 
             ImmutableDictionary<String, LocalModState>.Builder localMods = ImmutableDictionary.CreateBuilder<String, LocalModState>();
@@ -188,21 +200,9 @@ namespace MultiMc.SolderUpdater
                 localMods.Add(mod.Name, new LocalModState(mod.Name, mod.Version, files.ToImmutable()));
             }
 
-            if (localState.HasValue)
-            {
-                foreach (LocalModState localMod in localState.Value.LocalMods.Values)
-                {
-                    if (!localMods.ContainsKey(localMod.Name))
-                    {
-                        logger.LogInformation($"Mod {localMod.Name} no longer exists.");
-                        DeleteLocalMod(localMod);
-                    }
-                }
-            }
-
             localState = new LocalState(updaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable());
             using (logger.BeginOperation("Saving version to file"))
-                File.WriteAllText(localCopyStateFile, JsonConvert.SerializeObject(localState, Formatting.Indented));
+                File.WriteAllText(localStateFile, JsonConvert.SerializeObject(localState, Formatting.Indented));
 
             return 0;
         }
