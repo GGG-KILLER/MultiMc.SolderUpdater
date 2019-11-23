@@ -1,11 +1,12 @@
-﻿using MultiMc.SolderUpdater.Solder;
-using MultiMc.SolderUpdater.Solder.Responses;
 using GUtils.Timing;
+using MultiMc.SolderUpdater.Solder;
+using MultiMc.SolderUpdater.Solder.Responses;
 using Newtonsoft.Json;
 using System;
 using System.Collections.Immutable;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace MultiMc.SolderUpdater
@@ -27,16 +28,19 @@ namespace MultiMc.SolderUpdater
         {
             using (logger.BeginScope($"Deleting mod {localModState.Name}"))
             {
-                foreach (var file in localModState.Files)
+                foreach (var file in localModState.Files.OrderBy(f => f.EndsWith('/') || f.EndsWith('\\')))
                 {
                     try
                     {
-                        File.Delete(file);
+                        if (file.EndsWith('/') || file.EndsWith('\\'))
+                            Directory.Delete(file);
+                        else
+                            File.Delete(file);
                         logger.LogDebug($"Deleted {file}");
                     }
-                    catch
+                    catch (Exception ex)
                     {
-                        logger.LogError($"Failed to delete {file}");
+                        logger.LogError($"Failed to delete {file} ({ex.Message})");
                     }
                 }
             }
