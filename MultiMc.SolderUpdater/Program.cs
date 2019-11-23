@@ -13,7 +13,7 @@ namespace MultiMc.SolderUpdater
 {
     internal static class Program
     {
-        private static readonly Version updaterVersion = new Version("1.2.0");
+        private static readonly Version updaterVersion = new Version("1.2.1");
         private static readonly TimingLogger logger;
 
         static Program()
@@ -113,8 +113,10 @@ namespace MultiMc.SolderUpdater
                         localState = new JsonSerializer().Deserialize<LocalState>(jreader);
 
                     // Both v1.0.0 and v1.1.0 had a flaw where a local file could be missing if the
-                    // mod got deleted but a file with the same name got added in another mod
-                    if (localState.Value.UpdaterVersion < new Version("1.2.0"))
+                    // mod got deleted but a file with the same name got added in another mod. And
+                    // v1.2.0 had another bug where it just deleted all mod and config files after
+                    // migrating but didn't re-download them.
+                    if (localState.Value.UpdaterVersion < new Version("1.2.1"))
                     {
                         // Redownload all mods
                         using (logger.BeginScope("Deleting all mods because of updater version update", false))
@@ -123,7 +125,7 @@ namespace MultiMc.SolderUpdater
                             {
                                 DeleteLocalMod(mod);
                             }
-                            localState = new LocalState(updaterVersion, localState.Value.ModpackVersion, ImmutableDictionary<String, LocalModState>.Empty);
+                            localState = null;
                         }
                     }
 
