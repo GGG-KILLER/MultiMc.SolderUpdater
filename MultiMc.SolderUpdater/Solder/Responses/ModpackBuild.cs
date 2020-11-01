@@ -1,5 +1,5 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace MultiMc.SolderUpdater.Solder.Responses
 {
@@ -11,14 +11,11 @@ namespace MultiMc.SolderUpdater.Solder.Responses
         public ModVersion[] Mods { get; }
 
         [JsonConstructor]
-        public ModpackBuild ( [JsonProperty ( "minecraft" )] String minecraftVersion,
-                              [JsonProperty ( "minecraft_md5" )] String minecraftMd5,
-                              [JsonProperty ( "forge" )] String forgeVersion,
-                              [JsonProperty ( "mods" )] ModVersion[] mods )
+        public ModpackBuild ( String minecraft, String minecraft_md5, String forge, ModVersion[] mods )
         {
-            this.MinecraftVersion = minecraftVersion;
-            this.MinecraftMd5 = minecraftMd5;
-            this.ForgeVersion = forgeVersion;
+            this.MinecraftVersion = minecraft;
+            this.MinecraftMd5 = minecraft_md5;
+            this.ForgeVersion = forge;
             this.Mods = mods;
         }
     }

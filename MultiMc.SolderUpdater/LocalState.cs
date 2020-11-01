@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace MultiMc.SolderUpdater
 {

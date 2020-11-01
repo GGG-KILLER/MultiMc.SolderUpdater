@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace MultiMc.SolderUpdater
 {
@@ -9,6 +10,7 @@ namespace MultiMc.SolderUpdater
         public String Version { get; }
         public ImmutableArray<String> Files { get; }
 
+        [JsonConstructor]
         public LocalModState ( String name, String version, ImmutableArray<String> files )
         {
             this.Name = name;

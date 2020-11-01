@@ -1,5 +1,5 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace MultiMc.SolderUpdater.Solder.Responses
 {
@@ -14,21 +14,17 @@ namespace MultiMc.SolderUpdater.Solder.Responses
         public String[] Versions { get; }
 
         [JsonConstructor]
-        public ModInfo ( [JsonProperty ( "name" )] String name,
-                         [JsonProperty ( "pretty_name" )] String prettyName,
-                         [JsonProperty ( "author" )] String author,
-                         [JsonProperty ( "description" )] String description,
-                         [JsonProperty ( "link" )] String link,
-                         [JsonProperty ( "donate" )] String donate,
-                         [JsonProperty ( "versions" )] String[] versions )
+        public ModInfo (
+            String name, String pretty_name, String author, String description, String link, String donate,
+            String[] versions )
         {
             if ( String.IsNullOrWhiteSpace ( name ) )
                 throw new ArgumentException ( "Name cannot be null, empty or composed of whitespaces.", nameof ( name ) );
-            if ( String.IsNullOrWhiteSpace ( prettyName ) )
-                throw new ArgumentException ( "Pretty name cannot be null, empty or composed of whitespaces.", nameof ( prettyName ) );
+            if ( String.IsNullOrWhiteSpace ( pretty_name ) )
+                throw new ArgumentException ( "Pretty name cannot be null, empty or composed of whitespaces.", nameof ( pretty_name ) );
 
             this.Name = name;
-            this.PrettyName = prettyName;
+            this.PrettyName = pretty_name;
             this.Author = author;
             this.Description = description;
             this.Link = link;

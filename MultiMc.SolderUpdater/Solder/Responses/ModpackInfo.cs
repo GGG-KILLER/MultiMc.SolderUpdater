@@ -1,5 +1,5 @@
 ﻿using System;
-using Newtonsoft.Json;
+using System.Text.Json.Serialization;
 
 namespace MultiMc.SolderUpdater.Solder.Responses
 {
@@ -18,30 +18,31 @@ namespace MultiMc.SolderUpdater.Solder.Responses
         public String LatestBuild { get; }
         public String[] Builds { get; }
 
-        public ModpackInfo ( [JsonProperty ( "name" )] String name,
-                           [JsonProperty ( "display_name" )] String displayName,
-                           [JsonProperty ( "url" )] String url,
-                           [JsonProperty ( "icon" )] String icon,
-                           [JsonProperty ( "icon_md5" )] String iconMd5,
-                           [JsonProperty ( "logo" )] String logo,
-                           [JsonProperty ( "logo_md5" )] String logoMd5,
-                           [JsonProperty ( "background" )] String background,
-                           [JsonProperty ( "background_md5" )] String backgroundMd5,
-                           [JsonProperty ( "recommended" )] String recommendedBuild,
-                           [JsonProperty ( "latest" )] String latestBuild,
-                           [JsonProperty ( "builds" )] String[] builds )
+        [JsonConstructor]
+        public ModpackInfo ( String name,
+                             String display_name,
+                             String url,
+                             String icon,
+                             String icon_md5,
+                             String logo,
+                             String logo_md5,
+                             String background,
+                             String background_md5,
+                             String recommended,
+                             String latest,
+                             String[] builds )
         {
             this.Name = name ?? throw new ArgumentNullException ( nameof ( name ) );
-            this.DisplayName = displayName ?? throw new ArgumentNullException ( nameof ( displayName ) );
+            this.DisplayName = display_name ?? throw new ArgumentNullException ( nameof ( display_name ) );
             this.Url = url;
             this.Icon = icon ?? throw new ArgumentNullException ( nameof ( icon ) );
-            this.IconMd5 = iconMd5;
+            this.IconMd5 = icon_md5;
             this.Logo = logo ?? throw new ArgumentNullException ( nameof ( logo ) );
-            this.LogoMd5 = logoMd5;
+            this.LogoMd5 = logo_md5;
             this.Background = background ?? throw new ArgumentNullException ( nameof ( background ) );
-            this.BackgroundMd5 = backgroundMd5;
-            this.RecommendedBuild = recommendedBuild ?? throw new ArgumentNullException ( nameof ( recommendedBuild ) );
-            this.LatestBuild = latestBuild ?? throw new ArgumentNullException ( nameof ( latestBuild ) );
+            this.BackgroundMd5 = background_md5;
+            this.RecommendedBuild = recommended ?? throw new ArgumentNullException ( nameof ( recommended ) );
+            this.LatestBuild = latest ?? throw new ArgumentNullException ( nameof ( latest ) );
             this.Builds = builds ?? throw new ArgumentNullException ( nameof ( builds ) );
         }
     }
