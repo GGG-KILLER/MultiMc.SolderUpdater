@@ -1,6 +1,6 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Collections.Immutable;
+using Newtonsoft.Json;
 
 namespace MultiMc.SolderUpdater
 {
@@ -11,7 +11,7 @@ namespace MultiMc.SolderUpdater
         public ImmutableDictionary<String, LocalModState> LocalMods { get; }
 
         [JsonConstructor]
-        public LocalState(Version updaterVersion, String modpackVersion, ImmutableDictionary<String, LocalModState> localMods)
+        public LocalState ( Version updaterVersion, String modpackVersion, ImmutableDictionary<String, LocalModState> localMods )
         {
             this.UpdaterVersion = updaterVersion;
             this.ModpackVersion = modpackVersion;

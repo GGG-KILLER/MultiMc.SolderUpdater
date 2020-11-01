@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace MultiMc.SolderUpdater.Solder.Responses
 {
@@ -11,7 +11,7 @@ namespace MultiMc.SolderUpdater.Solder.Responses
         public String Url { get; }
 
         [JsonConstructor]
-        public ModVersion(String md5, String url, String name = null, String version = null)
+        public ModVersion ( String md5, String url, String name = null, String version = null )
         {
             this.Name = name;
             this.Version = version;

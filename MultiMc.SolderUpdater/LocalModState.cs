@@ -9,7 +9,7 @@ namespace MultiMc.SolderUpdater
         public String Version { get; }
         public ImmutableArray<String> Files { get; }
 
-        public LocalModState(String name, String version, ImmutableArray<String> files)
+        public LocalModState ( String name, String version, ImmutableArray<String> files )
         {
             this.Name = name;
             this.Version = version;

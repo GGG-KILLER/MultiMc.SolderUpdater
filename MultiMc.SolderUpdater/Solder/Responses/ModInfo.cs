@@ -1,5 +1,5 @@
-﻿using Newtonsoft.Json;
-using System;
+﻿using System;
+using Newtonsoft.Json;
 
 namespace MultiMc.SolderUpdater.Solder.Responses
 {
@@ -14,18 +14,18 @@ namespace MultiMc.SolderUpdater.Solder.Responses
         public String[] Versions { get; }
 
         [JsonConstructor]
-        public ModInfo([JsonProperty("name")] String name,
-                       [JsonProperty("pretty_name")] String prettyName,
-                       [JsonProperty("author")] String author,
-                       [JsonProperty("description")] String description,
-                       [JsonProperty("link")] String link,
-                       [JsonProperty("donate")] String donate,
-                       [JsonProperty("versions")] String[] versions)
+        public ModInfo ( [JsonProperty ( "name" )] String name,
+                         [JsonProperty ( "pretty_name" )] String prettyName,
+                         [JsonProperty ( "author" )] String author,
+                         [JsonProperty ( "description" )] String description,
+                         [JsonProperty ( "link" )] String link,
+                         [JsonProperty ( "donate" )] String donate,
+                         [JsonProperty ( "versions" )] String[] versions )
         {
-            if (String.IsNullOrWhiteSpace(name))
-                throw new ArgumentException("Name cannot be null, empty or composed of whitespaces.", nameof(name));
-            if (String.IsNullOrWhiteSpace(prettyName))
-                throw new ArgumentException("Pretty name cannot be null, empty or composed of whitespaces.", nameof(prettyName));
+            if ( String.IsNullOrWhiteSpace ( name ) )
+                throw new ArgumentException ( "Name cannot be null, empty or composed of whitespaces.", nameof ( name ) );
+            if ( String.IsNullOrWhiteSpace ( prettyName ) )
+                throw new ArgumentException ( "Pretty name cannot be null, empty or composed of whitespaces.", nameof ( prettyName ) );
 
             this.Name = name;
             this.PrettyName = prettyName;
@@ -33,7 +33,7 @@ namespace MultiMc.SolderUpdater.Solder.Responses
             this.Description = description;
             this.Link = link;
             this.Donate = donate;
-            this.Versions = versions ?? throw new ArgumentNullException(nameof(versions));
+            this.Versions = versions ?? throw new ArgumentNullException ( nameof ( versions ) );
         }
     }
 }
