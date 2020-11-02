@@ -8,7 +8,6 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using MultiMc.SolderUpdater.Solder;
 using MultiMc.SolderUpdater.Solder.Responses;
-using Tsu.Numerics;
 using Tsu.Timing;
 
 namespace MultiMc.SolderUpdater
@@ -17,7 +16,9 @@ namespace MultiMc.SolderUpdater
     {
         private static readonly Version updaterVersion = new Version ( "1.3.0" );
         private static readonly TimingLogger logger = new ConsoleTimingLogger ( );
+#if LOG_IN_DOWNLOAD
         private static readonly Object _logLock = new Object ( );
+#endif
         private static readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
         {
             AllowTrailingCommas = true,
@@ -44,13 +45,11 @@ namespace MultiMc.SolderUpdater
                             Directory.Delete ( file );
                         else
                             File.Delete ( file );
-                        lock ( _logLock )
-                            logger.LogDebug ( $"Deleted {file}" );
+                        logger.LogDebug ( $"Deleted {file}" );
                     }
                     catch ( Exception ex )
                     {
-                        lock ( _logLock )
-                            logger.LogError ( $"Failed to delete {file} ({ex.Message})" );
+                        logger.LogError ( $"Failed to delete {file} ({ex.Message})." );
                     }
                 }
             }
@@ -65,8 +64,10 @@ namespace MultiMc.SolderUpdater
         {
             if ( mod.Name.Equals ( "_forge", StringComparison.OrdinalIgnoreCase ) )
             {
+#if LOG_IN_DOWNLOAD
                 lock ( _logLock )
                     logger.LogInformation ( "Skipping forge..." );
+#endif
                 return;
             }
 
@@ -77,34 +78,44 @@ namespace MultiMc.SolderUpdater
                     if ( localModState.Version.Equals ( mod.Version, StringComparison.OrdinalIgnoreCase ) )
                     {
                         localMods.Add ( localModState.Name, localModState );
+#if LOG_IN_DOWNLOAD
                         lock ( _logLock )
                             logger.LogInformation ( $"Mod {mod.Name} is up to date." );
+#endif
                         return;
                     }
                     else
                     {
+#if LOG_IN_DOWNLOAD
                         lock ( _logLock )
                             logger.LogInformation ( $"Mod {mod.Name} is out of date." );
+#endif
                         DeleteLocalMod ( localModState );
                     }
                 }
             }
 
+#if LOG_IN_DOWNLOAD
             lock ( _logLock )
                 logger.LogInformation ( $"Obtaining {mod.Name} stream..." );
+#endif
             var ts = Stopwatch.GetTimestamp ( );
             Stream stream = await client.GetStreamAsync ( mod.Url ).ConfigureAwait ( false );
             var dts = Stopwatch.GetTimestamp ( ) - ts;
+#if LOG_IN_DOWNLOAD
             lock ( _logLock )
                 logger.LogInformation ( $"Obtained {mod.Name} stream in {Duration.Format ( dts )}." );
 
             lock ( _logLock )
                 logger.LogInformation ( $"Reading {mod.Name} zip file..." );
+#endif
             ts = Stopwatch.GetTimestamp ( );
             var archive = new ZipArchive ( stream );
             dts = Stopwatch.GetTimestamp ( ) - ts;
+#if LOG_IN_DOWNLOAD
             lock ( _logLock )
                 logger.LogInformation ( $"Read {mod.Name} zip file in {Duration.Format ( dts )}." );
+#endif
 
             ImmutableArray<String>.Builder files = ImmutableArray.CreateBuilder<String> ( );
             using ( archive )
@@ -112,13 +123,17 @@ namespace MultiMc.SolderUpdater
                 foreach ( ZipArchiveEntry entry in archive.Entries )
                     files.Add ( entry.FullName );
 
+#if LOG_IN_DOWNLOAD
                 lock ( _logLock )
                     logger.LogInformation ( $"Extracting {mod.Name} zip file..." );
+#endif
                 ts = Stopwatch.GetTimestamp ( );
                 archive.ExtractToDirectory ( instancePath, true );
                 dts = Stopwatch.GetTimestamp ( ) - ts;
+#if LOG_IN_DOWNLOAD
                 lock ( _logLock )
                     logger.LogInformation ( $"Extracted {mod.Name} zip file in {Duration.Format ( dts )}." );
+#endif
             }
             localMods.Add ( mod.Name, new LocalModState ( mod.Name, mod.Version, files.ToImmutable ( ) ) );
         }
@@ -127,18 +142,14 @@ namespace MultiMc.SolderUpdater
         {
             if ( args.Length == 0 )
             {
-                lock ( _logLock )
-                    PrintUsage ( );
+                PrintUsage ( );
                 return 0;
             }
             else if ( args.Length != 3 )
             {
-                lock ( _logLock )
-                {
-                    logger.LogError ( "Not enough arguments!" );
-                    logger.WriteLine ( "" );
-                    PrintUsage ( );
-                }
+                logger.LogError ( "Not enough arguments!" );
+                logger.WriteLine ( "" );
+                PrintUsage ( );
                 return 1;
             }
 
@@ -147,8 +158,7 @@ namespace MultiMc.SolderUpdater
             var modpackSlug = args[1].Trim ( );
             if ( String.IsNullOrWhiteSpace ( modpackSlug ) )
             {
-                lock ( _logLock )
-                    logger.LogError ( "Invalid slug." );
+                logger.LogError ( "Invalid slug." );
                 return 1;
             }
 
@@ -156,19 +166,22 @@ namespace MultiMc.SolderUpdater
             var localStateFile = Path.Combine ( instancePath, "solder-modpack.lock" );
             if ( !Directory.Exists ( instancePath ) )
             {
-                lock ( _logLock )
-                    logger.LogError ( "The instance path provided does not exist." );
+                logger.LogError ( "The instance path provided does not exist." );
                 return 1;
             }
 
             try
             {
-                ApiInfo info = await client.GetApiInfoAsync ( ).ConfigureAwait ( false );
+                ApiInfo info;
+                using ( logger.BeginOperation ( "Obtaining API info" ) )
+                {
+                    info = await client.GetApiInfoAsync ( )
+                                       .ConfigureAwait ( false );
+                }
 
                 if ( !info.ApiName.Equals ( "TechnicSolder", StringComparison.OrdinalIgnoreCase ) )
                 {
-                    lock ( _logLock )
-                        logger.LogError ( $"Unsupported API ({info.ApiName})" );
+                    logger.LogError ( $"Unsupported API ({info.ApiName})" );
                     return 1;
                 }
                 else if ( info.Version.Length < 2
@@ -176,18 +189,14 @@ namespace MultiMc.SolderUpdater
                           || version.Major > 0
                           || version.Minor > 7 )
                 {
-                    lock ( _logLock )
-                        logger.LogError ( $"Unsupported API version ({info.Version})" );
+                    logger.LogError ( $"Unsupported API version ({info.Version})" );
                     return 1;
                 }
             }
             catch ( Exception ex )
             {
-                lock ( _logLock )
-                {
-                    logger.LogError ( "Unable to obtain the Solder API information." );
-                    logger.LogError ( ex.ToString ( ) );
-                }
+                logger.LogError ( "Unable to obtain the Solder API information." );
+                logger.LogError ( ex.ToString ( ) );
                 return 1;
             }
 
@@ -195,10 +204,15 @@ namespace MultiMc.SolderUpdater
             LocalState? localState = null;
             try
             {
-                modpackInfo = await client.GetModpackInfoAsync ( modpackSlug ).ConfigureAwait ( false );
+                using ( logger.BeginOperation ( "Obtaining modpack info" ) )
+                {
+                    modpackInfo = await client.GetModpackInfoAsync ( modpackSlug )
+                                              .ConfigureAwait ( false );
+                }
 
                 if ( File.Exists ( localStateFile ) )
                 {
+                    using ( logger.BeginOperation ( "Reading state info" ) )
                     using ( FileStream stream = File.OpenRead ( localStateFile ) )
                     {
                         localState = await JsonSerializer.DeserializeAsync<LocalState> ( stream, jsonSerializerOptions )
@@ -224,35 +238,31 @@ namespace MultiMc.SolderUpdater
 
                     if ( localState?.ModpackVersion.Equals ( modpackInfo.LatestBuild, StringComparison.OrdinalIgnoreCase ) is true )
                     {
-                        lock ( _logLock )
-                            logger.LogInformation ( "Modpack is up to date." );
+                        logger.LogInformation ( "Modpack is up to date." );
                         return 0;
                     }
                 }
             }
             catch ( Exception ex )
             {
-                lock ( _logLock )
-                {
-                    logger.LogError ( "Unable to get modpack information:" );
-                    logger.LogError ( ex.ToString ( ) );
-                }
+                logger.LogError ( "Unable to get modpack information:" );
+                logger.LogError ( ex.ToString ( ) );
                 return 1;
             }
 
             ModpackBuild modpackBuild;
             try
             {
-                modpackBuild = await client.GetModpackBuildAsync ( modpackSlug, modpackInfo.LatestBuild )
-                                           .ConfigureAwait ( false );
+                using ( logger.BeginOperation ( "Obtaining modpack build info" ) )
+                {
+                    modpackBuild = await client.GetModpackBuildAsync ( modpackSlug, modpackInfo.LatestBuild )
+                                               .ConfigureAwait ( false );
+                }
             }
             catch ( Exception ex )
             {
-                lock ( _logLock )
-                {
-                    logger.LogError ( "Unable to get modpack build:" );
-                    logger.LogError ( ex.ToString ( ) );
-                }
+                logger.LogError ( "Unable to get modpack build:" );
+                logger.LogError ( ex.ToString ( ) );
                 return 1;
             }
 
@@ -262,22 +272,25 @@ namespace MultiMc.SolderUpdater
                 {
                     if ( !modpackBuild.Mods.Any ( m => m.Name.Equals ( localMod.Name, StringComparison.OrdinalIgnoreCase ) ) )
                     {
-                        lock ( _logLock )
-                            logger.LogInformation ( $"Mod {localMod.Name} no longer exists." );
+                        logger.LogInformation ( $"Mod {localMod.Name} no longer exists." );
                         DeleteLocalMod ( localMod );
                     }
                 }
             }
 
             ImmutableDictionary<String, LocalModState>.Builder localMods = ImmutableDictionary.CreateBuilder<String, LocalModState> ( );
+#if LOG_IN_DOWNLOAD
             using ( logger.BeginScope ( "Downloading mods" ) )
+#else
+            using ( logger.BeginOperation ( "Updating mods" ) )
+#endif
             {
                 await Task.WhenAll ( modpackBuild.Mods.Select ( mod => DownloadMod ( client, localState, instancePath, mod, localMods ) ) )
                           .ConfigureAwait ( false );
             }
 
             localState = new LocalState ( updaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable ( ) );
-            using ( logger.BeginOperation ( "Saving version to file" ) )
+            using ( logger.BeginOperation ( "Saving local state to file" ) )
             using ( FileStream stream = File.OpenWrite ( localStateFile ) )
             {
                 await JsonSerializer.SerializeAsync ( stream, localState.Value, jsonSerializerOptions )
