@@ -98,21 +98,21 @@ namespace MultiMc.SolderUpdater
 #if LOG_IN_DOWNLOAD
             lock ( _logLock )
                 logger.LogInformation ( $"Obtaining {mod.Name} stream..." );
-#endif
             var ts = Stopwatch.GetTimestamp ( );
+#endif
             Stream stream = await client.GetStreamAsync ( mod.Url ).ConfigureAwait ( false );
-            var dts = Stopwatch.GetTimestamp ( ) - ts;
 #if LOG_IN_DOWNLOAD
+            var dts = Stopwatch.GetTimestamp ( ) - ts;
             lock ( _logLock )
                 logger.LogInformation ( $"Obtained {mod.Name} stream in {Duration.Format ( dts )}." );
 
             lock ( _logLock )
                 logger.LogInformation ( $"Reading {mod.Name} zip file..." );
-#endif
             ts = Stopwatch.GetTimestamp ( );
+#endif
             var archive = new ZipArchive ( stream );
-            dts = Stopwatch.GetTimestamp ( ) - ts;
 #if LOG_IN_DOWNLOAD
+            dts = Stopwatch.GetTimestamp ( ) - ts;
             lock ( _logLock )
                 logger.LogInformation ( $"Read {mod.Name} zip file in {Duration.Format ( dts )}." );
 #endif
@@ -126,11 +126,11 @@ namespace MultiMc.SolderUpdater
 #if LOG_IN_DOWNLOAD
                 lock ( _logLock )
                     logger.LogInformation ( $"Extracting {mod.Name} zip file..." );
-#endif
                 ts = Stopwatch.GetTimestamp ( );
+#endif
                 archive.ExtractToDirectory ( instancePath, true );
-                dts = Stopwatch.GetTimestamp ( ) - ts;
 #if LOG_IN_DOWNLOAD
+                dts = Stopwatch.GetTimestamp ( ) - ts;
                 lock ( _logLock )
                     logger.LogInformation ( $"Extracted {mod.Name} zip file in {Duration.Format ( dts )}." );
 #endif
