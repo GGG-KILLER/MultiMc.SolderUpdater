@@ -12,7 +12,7 @@ namespace MultiMc.SolderUpdater.Solder
         {
             this.BaseAddress = new Uri ( baseUri.GetLeftPart ( UriPartial.Authority ) );
             this.DefaultRequestHeaders.UserAgent.Clear ( );
-            this.DefaultRequestHeaders.UserAgent.Add ( new System.Net.Http.Headers.ProductInfoHeaderValue ( "MultiMc.SolderUpdater", "1.0.0" ) );
+            this.DefaultRequestHeaders.UserAgent.Add ( new System.Net.Http.Headers.ProductInfoHeaderValue ( "MultiMc.SolderUpdater", Program.UpdaterVersion.ToString ( 3 ) ) );
             this.DefaultRequestVersion = new Version ( 2, 0 );
         }
 

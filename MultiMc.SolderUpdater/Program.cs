@@ -14,7 +14,7 @@ namespace MultiMc.SolderUpdater
 {
     internal static class Program
     {
-        private static readonly Version updaterVersion = new Version ( "1.3.0" );
+        public static readonly Version UpdaterVersion = new Version ( "1.3.0" );
         private static readonly TimingLogger logger = new ConsoleTimingLogger ( );
 #if LOG_IN_DOWNLOAD
         private static readonly Object _logLock = new Object ( );
@@ -289,7 +289,7 @@ namespace MultiMc.SolderUpdater
                           .ConfigureAwait ( false );
             }
 
-            localState = new LocalState ( updaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable ( ) );
+            localState = new LocalState ( UpdaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable ( ) );
             using ( logger.BeginOperation ( "Saving local state to file" ) )
             using ( FileStream stream = File.OpenWrite ( localStateFile ) )
             {
