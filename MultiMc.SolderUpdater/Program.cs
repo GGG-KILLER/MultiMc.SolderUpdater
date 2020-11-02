@@ -15,7 +15,7 @@ namespace MultiMc.SolderUpdater
 {
     internal static class Program
     {
-        private static readonly Version updaterVersion = new Version ( "1.2.1" );
+        private static readonly Version updaterVersion = new Version ( "1.3.0" );
         private static readonly TimingLogger logger = new ConsoleTimingLogger ( );
         private static readonly Object _logLock = new Object ( );
         private static readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
