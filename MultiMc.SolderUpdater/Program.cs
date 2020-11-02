@@ -62,14 +62,14 @@ namespace MultiMc.SolderUpdater
             ModVersion mod,
             ImmutableDictionary<String, LocalModState>.Builder localMods )
         {
-            if ( mod.Name.Equals ( "_forge", StringComparison.OrdinalIgnoreCase ) )
-            {
-#if LOG_IN_DOWNLOAD
-                lock ( _logLock )
-                    logger.LogInformation ( "Skipping forge..." );
-#endif
-                return;
-            }
+//            if ( mod.Name.Equals ( "_forge", StringComparison.OrdinalIgnoreCase ) )
+//            {
+//#if LOG_IN_DOWNLOAD
+//                lock ( _logLock )
+//                    logger.LogInformation ( "Skipping forge..." );
+//#endif
+//                return;
+//            }
 
             if ( localState.HasValue )
             {
