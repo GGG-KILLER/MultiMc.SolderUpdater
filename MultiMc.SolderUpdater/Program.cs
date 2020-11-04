@@ -64,15 +64,6 @@ namespace MultiMc.SolderUpdater
             ModVersion mod,
             ImmutableDictionary<String, LocalModState>.Builder localMods )
         {
-//            if ( mod.Name.Equals ( "_forge", StringComparison.OrdinalIgnoreCase ) )
-//            {
-//#if LOG_IN_DOWNLOAD
-//                lock ( _logLock )
-//                    logger.LogInformation ( "Skipping forge..." );
-//#endif
-//                return;
-//            }
-
             if ( localState.HasValue )
             {
                 if ( localState.Value.LocalMods.TryGetValue ( mod.Name, out LocalModState localModState ) )
@@ -80,62 +71,23 @@ namespace MultiMc.SolderUpdater
                     if ( localModState.Version.Equals ( mod.Version, StringComparison.OrdinalIgnoreCase ) )
                     {
                         localMods.Add ( localModState.Name, localModState );
-#if LOG_IN_DOWNLOAD
-                        lock ( _logLock )
-                            logger.LogInformation ( $"Mod {mod.Name} is up to date." );
-#endif
                         return;
                     }
                     else
                     {
-#if LOG_IN_DOWNLOAD
-                        lock ( _logLock )
-                            logger.LogInformation ( $"Mod {mod.Name} is out of date." );
-#endif
                         DeleteLocalMod ( localModState );
                     }
                 }
             }
 
-#if LOG_IN_DOWNLOAD
-            lock ( _logLock )
-                logger.LogInformation ( $"Obtaining {mod.Name} stream..." );
-            var ts = Stopwatch.GetTimestamp ( );
-#endif
-            Stream stream = await client.GetStreamAsync ( mod.Url ).ConfigureAwait ( false );
-#if LOG_IN_DOWNLOAD
-            var dts = Stopwatch.GetTimestamp ( ) - ts;
-            lock ( _logLock )
-                logger.LogInformation ( $"Obtained {mod.Name} stream in {Duration.Format ( dts )}." );
-
-            lock ( _logLock )
-                logger.LogInformation ( $"Reading {mod.Name} zip file..." );
-            ts = Stopwatch.GetTimestamp ( );
-#endif
-            var archive = new ZipArchive ( stream );
-#if LOG_IN_DOWNLOAD
-            dts = Stopwatch.GetTimestamp ( ) - ts;
-            lock ( _logLock )
-                logger.LogInformation ( $"Read {mod.Name} zip file in {Duration.Format ( dts )}." );
-#endif
-
             ImmutableArray<String>.Builder files = ImmutableArray.CreateBuilder<String> ( );
-            using ( archive )
+            using ( Stream stream = await client.GetStreamAsync ( mod.Url ).ConfigureAwait ( false ) )
+            using ( var archive = new ZipArchive ( stream ) )
             {
                 foreach ( ZipArchiveEntry entry in archive.Entries )
                     files.Add ( entry.FullName );
 
-#if LOG_IN_DOWNLOAD
-                lock ( _logLock )
-                    logger.LogInformation ( $"Extracting {mod.Name} zip file..." );
-                ts = Stopwatch.GetTimestamp ( );
-#endif
                 archive.ExtractToDirectory ( instancePath, true );
-#if LOG_IN_DOWNLOAD
-                dts = Stopwatch.GetTimestamp ( ) - ts;
-                lock ( _logLock )
-                    logger.LogInformation ( $"Extracted {mod.Name} zip file in {Duration.Format ( dts )}." );
-#endif
             }
             localMods.Add ( mod.Name, new LocalModState ( mod.Name, mod.Version, files.ToImmutable ( ) ) );
         }
