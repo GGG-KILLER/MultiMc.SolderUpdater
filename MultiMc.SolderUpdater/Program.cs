@@ -35,7 +35,8 @@ namespace MultiMc.SolderUpdater
             using ( logger.BeginScope ( $"Deleting mod {localModState.Name}" ) )
             {
                 // Sorts directories last then longer paths first so that inner stuff is deleted before outer stuff.
-                foreach ( var file in localModState.Files.OrderByDescending ( f => ( File.GetAttributes ( f ) & FileAttributes.Directory ) == 0 )
+                foreach ( var file in localModState.Files.Where ( f => Directory.Exists ( f ) || File.Exists ( f ) )
+                                                         .OrderByDescending ( f => ( File.GetAttributes ( f ) & FileAttributes.Directory ) == 0 )
                                                          .ThenByDescending ( f => f.Length ) )
                 {
                     try
