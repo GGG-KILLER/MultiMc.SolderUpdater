@@ -1,6 +1,5 @@
-using System;
+﻿using System;
 using System.Collections.Immutable;
-using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -16,9 +15,6 @@ namespace MultiMc.SolderUpdater
     {
         public static readonly Version UpdaterVersion = new Version ( "1.3.0" );
         private static readonly TimingLogger logger = new ConsoleTimingLogger ( );
-#if LOG_IN_DOWNLOAD
-        private static readonly Object _logLock = new Object ( );
-#endif
         private static readonly JsonSerializerOptions jsonSerializerOptions = new JsonSerializerOptions
         {
             AllowTrailingCommas = true,
@@ -43,10 +39,14 @@ namespace MultiMc.SolderUpdater
                 {
                     try
                     {
-                        if ( file.EndsWith ( '/' ) || file.EndsWith ( '\\' ) )
+                        if ( ( File.GetAttributes ( file ) & FileAttributes.Directory ) != 0 )
+                        {
                             Directory.Delete ( file );
+                        }
                         else
+                        {
                             File.Delete ( file );
+                        }
                         logger.LogDebug ( $"Deleted {file}" );
                     }
                     catch ( Exception ex )
