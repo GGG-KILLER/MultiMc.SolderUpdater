@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.IO;
@@ -37,7 +37,9 @@ namespace MultiMc.SolderUpdater
         {
             using ( logger.BeginScope ( $"Deleting mod {localModState.Name}" ) )
             {
-                foreach ( var file in localModState.Files.OrderBy ( f => f.EndsWith ( '/' ) || f.EndsWith ( '\\' ) ) )
+                // Sorts directories last then longer paths first so that inner stuff is deleted before outer stuff.
+                foreach ( var file in localModState.Files.OrderByDescending ( f => ( File.GetAttributes ( f ) & FileAttributes.Directory ) == 0 )
+                                                         .ThenByDescending ( f => f.Length ) )
                 {
                     try
                     {
