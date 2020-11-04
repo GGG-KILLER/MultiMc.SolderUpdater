@@ -2,9 +2,10 @@
 Changes:
 
 - Change sorting of zip paths when deleting older versions of mods so that nested directories and files are deleted before its ancestors;
+- Change saving of lockfile to truncate file when writing;
 - Change directory check used when deleting files;
 - Change working directory to instance path when doing operations;
-- Implement deletion of all mods because of the bug mentioned on the first item.
+- Implement deletion of all mods because of the bug mentioned on the first and second items.
 
 ## v1.3.1
 Changes:

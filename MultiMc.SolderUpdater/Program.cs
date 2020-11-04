@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using MultiMc.SolderUpdater.Solder;
@@ -162,6 +163,7 @@ namespace MultiMc.SolderUpdater
                 LocalState? localState = null;
                 try
                 {
+
                     using ( logger.BeginOperation ( "Obtaining modpack info" ) )
                     {
                         modpackInfo = await client.GetModpackInfoAsync ( modpackSlug )
@@ -173,8 +175,30 @@ namespace MultiMc.SolderUpdater
                         using ( logger.BeginOperation ( "Reading state info" ) )
                         using ( FileStream stream = File.OpenRead ( localStateFile ) )
                         {
-                            localState = await JsonSerializer.DeserializeAsync<LocalState> ( stream, jsonSerializerOptions )
-                                                             .ConfigureAwait ( false );
+                            try
+                            {
+                                localState = await JsonSerializer.DeserializeAsync<LocalState> ( stream, jsonSerializerOptions )
+                                                                 .ConfigureAwait ( false );
+                            }
+                            catch ( JsonException )
+                            {
+                                stream.Seek ( 0, SeekOrigin.Begin );
+                                var builder = new StringBuilder ( );
+                                using ( var reader = new StreamReader ( stream ) )
+                                {
+                                    String line;
+                                    while ( !( line = await reader.ReadLineAsync ( )
+                                                                  .ConfigureAwait ( false ) )
+                                                                  .StartsWith ( "}", StringComparison.Ordinal ) )
+                                    {
+                                        builder.AppendLine ( line );
+                                    }
+                                    builder.AppendLine ( "}" );
+                                }
+
+                                var json = builder.ToString ( );
+                                localState = JsonSerializer.Deserialize<LocalState> ( json, jsonSerializerOptions );
+                            }
                         }
 
                         // Both v1.0.0 and v1.1.0 had a flaw where a local file could be missing if the
@@ -246,8 +270,9 @@ namespace MultiMc.SolderUpdater
                 }
 
                 localState = new LocalState ( UpdaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable ( ) );
+
                 using ( logger.BeginOperation ( "Saving local state to file" ) )
-                using ( FileStream stream = File.OpenWrite ( localStateFile ) )
+                using ( FileStream stream = File.Open ( localStateFile, FileMode.Truncate, FileAccess.Write, FileShare.None ) )
                 {
                     await JsonSerializer.SerializeAsync ( stream, localState.Value, jsonSerializerOptions )
                                         .ConfigureAwait ( false );
