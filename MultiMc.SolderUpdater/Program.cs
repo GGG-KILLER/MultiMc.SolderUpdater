@@ -123,135 +123,140 @@ namespace MultiMc.SolderUpdater
                 logger.LogError ( "The instance path provided does not exist." );
                 return 1;
             }
+            var cwd = Environment.CurrentDirectory;
+            Environment.CurrentDirectory = instancePath;
 
             try
             {
-                ApiInfo info;
-                using ( logger.BeginOperation ( "Obtaining API info" ) )
+                try
                 {
-                    info = await client.GetApiInfoAsync ( )
-                                       .ConfigureAwait ( false );
-                }
-
-                if ( !info.ApiName.Equals ( "TechnicSolder", StringComparison.OrdinalIgnoreCase ) )
-                {
-                    logger.LogError ( $"Unsupported API ({info.ApiName})" );
-                    return 1;
-                }
-                else if ( info.Version.Length < 2
-                          || !Version.TryParse ( info.Version[1..], out Version version )
-                          || version.Major > 0
-                          || version.Minor > 7 )
-                {
-                    logger.LogError ( $"Unsupported API version ({info.Version})" );
-                    return 1;
-                }
-            }
-            catch ( Exception ex )
-            {
-                logger.LogError ( "Unable to obtain the Solder API information." );
-                logger.LogError ( ex.ToString ( ) );
-                return 1;
-            }
-
-            ModpackInfo modpackInfo;
-            LocalState? localState = null;
-            try
-            {
-                using ( logger.BeginOperation ( "Obtaining modpack info" ) )
-                {
-                    modpackInfo = await client.GetModpackInfoAsync ( modpackSlug )
-                                              .ConfigureAwait ( false );
-                }
-
-                if ( File.Exists ( localStateFile ) )
-                {
-                    using ( logger.BeginOperation ( "Reading state info" ) )
-                    using ( FileStream stream = File.OpenRead ( localStateFile ) )
+                    ApiInfo info;
+                    using ( logger.BeginOperation ( "Obtaining API info" ) )
                     {
-                        localState = await JsonSerializer.DeserializeAsync<LocalState> ( stream, jsonSerializerOptions )
-                                                         .ConfigureAwait ( false );
+                        info = await client.GetApiInfoAsync ( )
+                                           .ConfigureAwait ( false );
                     }
 
-                    // Both v1.0.0 and v1.1.0 had a flaw where a local file could be missing if the
-                    // mod got deleted but a file with the same name got added in another mod. And
-                    // v1.2.0 had another bug where it just deleted all mod and config files after
-                    // migrating but didn't re-download them.
-                    if ( localState.Value.UpdaterVersion < new Version ( "1.2.1" ) )
+                    if ( !info.ApiName.Equals ( "TechnicSolder", StringComparison.OrdinalIgnoreCase ) )
                     {
-                        // Redownload all mods
-                        using ( logger.BeginScope ( "Deleting all mods because of updater version update", false ) )
+                        logger.LogError ( $"Unsupported API ({info.ApiName})" );
+                        return 1;
+                    }
+                    else if ( info.Version.Length < 2
+                              || !Version.TryParse ( info.Version[1..], out Version version )
+                              || version.Major > 0
+                              || version.Minor > 7 )
+                    {
+                        logger.LogError ( $"Unsupported API version ({info.Version})" );
+                        return 1;
+                    }
+                }
+                catch ( Exception ex )
+                {
+                    logger.LogError ( "Unable to obtain the Solder API information." );
+                    logger.LogError ( ex.ToString ( ) );
+                    return 1;
+                }
+
+                ModpackInfo modpackInfo;
+                LocalState? localState = null;
+                try
+                {
+                    using ( logger.BeginOperation ( "Obtaining modpack info" ) )
+                    {
+                        modpackInfo = await client.GetModpackInfoAsync ( modpackSlug )
+                                                  .ConfigureAwait ( false );
+                    }
+
+                    if ( File.Exists ( localStateFile ) )
+                    {
+                        using ( logger.BeginOperation ( "Reading state info" ) )
+                        using ( FileStream stream = File.OpenRead ( localStateFile ) )
                         {
-                            foreach ( LocalModState mod in localState.Value.LocalMods.Values )
+                            localState = await JsonSerializer.DeserializeAsync<LocalState> ( stream, jsonSerializerOptions )
+                                                             .ConfigureAwait ( false );
+                        }
+
+                        // Both v1.0.0 and v1.1.0 had a flaw where a local file could be missing if the
+                        // mod got deleted but a file with the same name got added in another mod. And
+                        // v1.2.0 had another bug where it just deleted all mod and config files after
+                        // migrating but didn't re-download them.
+                        if ( localState.Value.UpdaterVersion < new Version ( "1.2.1" ) )
+                        {
+                            // Redownload all mods
+                            using ( logger.BeginScope ( "Deleting all mods because of updater version update", false ) )
                             {
-                                DeleteLocalMod ( mod );
+                                foreach ( LocalModState mod in localState.Value.LocalMods.Values )
+                                {
+                                    DeleteLocalMod ( mod );
+                                }
+                                localState = null;
                             }
-                            localState = null;
+                        }
+
+                        if ( localState?.ModpackVersion.Equals ( modpackInfo.LatestBuild, StringComparison.OrdinalIgnoreCase ) is true )
+                        {
+                            logger.LogInformation ( "Modpack is up to date." );
+                            return 0;
                         }
                     }
+                }
+                catch ( Exception ex )
+                {
+                    logger.LogError ( "Unable to get modpack information:" );
+                    logger.LogError ( ex.ToString ( ) );
+                    return 1;
+                }
 
-                    if ( localState?.ModpackVersion.Equals ( modpackInfo.LatestBuild, StringComparison.OrdinalIgnoreCase ) is true )
+                ModpackBuild modpackBuild;
+                try
+                {
+                    using ( logger.BeginOperation ( "Obtaining modpack build info" ) )
                     {
-                        logger.LogInformation ( "Modpack is up to date." );
-                        return 0;
+                        modpackBuild = await client.GetModpackBuildAsync ( modpackSlug, modpackInfo.LatestBuild )
+                                                   .ConfigureAwait ( false );
                     }
                 }
-            }
-            catch ( Exception ex )
-            {
-                logger.LogError ( "Unable to get modpack information:" );
-                logger.LogError ( ex.ToString ( ) );
-                return 1;
-            }
-
-            ModpackBuild modpackBuild;
-            try
-            {
-                using ( logger.BeginOperation ( "Obtaining modpack build info" ) )
+                catch ( Exception ex )
                 {
-                    modpackBuild = await client.GetModpackBuildAsync ( modpackSlug, modpackInfo.LatestBuild )
-                                               .ConfigureAwait ( false );
+                    logger.LogError ( "Unable to get modpack build:" );
+                    logger.LogError ( ex.ToString ( ) );
+                    return 1;
                 }
-            }
-            catch ( Exception ex )
-            {
-                logger.LogError ( "Unable to get modpack build:" );
-                logger.LogError ( ex.ToString ( ) );
-                return 1;
-            }
 
-            if ( localState.HasValue )
-            {
-                foreach ( LocalModState localMod in localState.Value.LocalMods.Values )
+                if ( localState.HasValue )
                 {
-                    if ( !modpackBuild.Mods.Any ( m => m.Name.Equals ( localMod.Name, StringComparison.OrdinalIgnoreCase ) ) )
+                    foreach ( LocalModState localMod in localState.Value.LocalMods.Values )
                     {
-                        logger.LogInformation ( $"Mod {localMod.Name} no longer exists." );
-                        DeleteLocalMod ( localMod );
+                        if ( !modpackBuild.Mods.Any ( m => m.Name.Equals ( localMod.Name, StringComparison.OrdinalIgnoreCase ) ) )
+                        {
+                            logger.LogInformation ( $"Mod {localMod.Name} no longer exists." );
+                            DeleteLocalMod ( localMod );
+                        }
                     }
                 }
-            }
 
-            ImmutableDictionary<String, LocalModState>.Builder localMods = ImmutableDictionary.CreateBuilder<String, LocalModState> ( );
-#if LOG_IN_DOWNLOAD
-            using ( logger.BeginScope ( "Downloading mods" ) )
-#else
-            using ( logger.BeginOperation ( "Updating mods" ) )
-#endif
+                ImmutableDictionary<String, LocalModState>.Builder localMods = ImmutableDictionary.CreateBuilder<String, LocalModState> ( );
+                using ( logger.BeginOperation ( "Updating mods" ) )
+                {
+                    await Task.WhenAll ( modpackBuild.Mods.Select ( mod => DownloadMod ( client, localState, instancePath, mod, localMods ) ) )
+                              .ConfigureAwait ( false );
+                }
+
+                localState = new LocalState ( UpdaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable ( ) );
+                using ( logger.BeginOperation ( "Saving local state to file" ) )
+                using ( FileStream stream = File.OpenWrite ( localStateFile ) )
+                {
+                    await JsonSerializer.SerializeAsync ( stream, localState.Value, jsonSerializerOptions )
+                                        .ConfigureAwait ( false );
+                }
+
+                return 0;
+            }
+            finally
             {
-                await Task.WhenAll ( modpackBuild.Mods.Select ( mod => DownloadMod ( client, localState, instancePath, mod, localMods ) ) )
-                          .ConfigureAwait ( false );
+                Environment.CurrentDirectory = cwd;
             }
-
-            localState = new LocalState ( UpdaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable ( ) );
-            using ( logger.BeginOperation ( "Saving local state to file" ) )
-            using ( FileStream stream = File.OpenWrite ( localStateFile ) )
-            {
-                await JsonSerializer.SerializeAsync ( stream, localState.Value, jsonSerializerOptions )
-                                    .ConfigureAwait ( false );
-            }
-
-            return 0;
         }
     }
 }
