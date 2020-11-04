@@ -272,8 +272,10 @@ namespace MultiMc.SolderUpdater
 
                 localState = new LocalState ( UpdaterVersion, modpackInfo.LatestBuild, localMods.ToImmutable ( ) );
 
+                if ( File.Exists ( localStateFile ) )
+                    File.Delete ( localStateFile );
                 using ( logger.BeginOperation ( "Saving local state to file" ) )
-                using ( FileStream stream = File.Open ( localStateFile, FileMode.Truncate, FileAccess.Write, FileShare.None ) )
+                using ( FileStream stream = File.Open ( localStateFile, FileMode.CreateNew, FileAccess.Write, FileShare.None ) )
                 {
                     await JsonSerializer.SerializeAsync ( stream, localState.Value, jsonSerializerOptions )
                                         .ConfigureAwait ( false );
