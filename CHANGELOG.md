@@ -1,7 +1,13 @@
+## v1.4.2
+Changes:
+
+- Change lockfile file handling to truncate it if it exists and create it if it doesn't.
+
+
 ## v1.4.1
 Changes:
 
-- Change lockfile file handling to truncate if it exists and create the file otherwise.
+- Change lockfile file handling delete it before writing.
 
 ## v1.4.0
 Changes:
