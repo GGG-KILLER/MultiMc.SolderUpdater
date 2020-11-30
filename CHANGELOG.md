@@ -1,3 +1,8 @@
+## v1.4.1
+Changes:
+
+- Change lockfile file handling to truncate if it exists and create the file otherwise.
+
 ## v1.4.0
 Changes:
 
