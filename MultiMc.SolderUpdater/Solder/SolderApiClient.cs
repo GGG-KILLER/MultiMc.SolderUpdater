@@ -17,7 +17,7 @@ namespace MultiMc.SolderUpdater.Solder
         }
 
         public async Task<ApiInfo> GetApiInfoAsync ( ) =>
-            await this.GetFromJsonAsync<ApiInfo> ( "api" ).ConfigureAwait ( false );
+            await this.GetFromJsonAsync<ApiInfo> ( "api/" ).ConfigureAwait ( false );
 
         public async Task<ModInfo> GetModInfoAsync ( String modName )
         {
