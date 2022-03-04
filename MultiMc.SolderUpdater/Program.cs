@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
@@ -139,21 +140,35 @@ namespace MultiMc.SolderUpdater
                                            .ConfigureAwait ( false );
                     }
 
-                    if ( !info.ApiName.Equals ( "TechnicSolder", StringComparison.OrdinalIgnoreCase ) )
+                    if ( info.ApiName.Equals ( "TechnicSolder", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        if ( info.Version.Length < 2
+                              || !Version.TryParse ( info.Version[1..], out Version version )
+                              || version.Major > 0
+                              || version.Minor > 7 )
+                        {
+                            logger.LogError ( $"Unsupported API version ({info.Version})" );
+                            return 1;
+                        }
+                    }
+                    else if ( info.ApiName.Equals ( "Solder.cf", StringComparison.OrdinalIgnoreCase ) )
+                    {
+                        if ( info.Version.Length < 2
+                              || !Version.TryParse ( info.Version[1..], out Version version )
+                              || version.Major > 1
+                              || version.Minor > 3 )
+                        {
+                            logger.LogError ( $"Unsupported API version ({info.Version})" );
+                            return 1;
+                        }
+                    }
+                    else
                     {
                         logger.LogError ( $"Unsupported API ({info.ApiName})" );
                         return 1;
                     }
-                    else if ( info.Version.Length < 2
-                              || !Version.TryParse ( info.Version[1..], out Version version )
-                              || version.Major > 0
-                              || version.Minor > 7 )
-                    {
-                        logger.LogError ( $"Unsupported API version ({info.Version})" );
-                        return 1;
-                    }
                 }
-                catch ( Exception ex )
+                catch ( Exception ex ) when ( !Debugger.IsAttached )
                 {
                     logger.LogError ( "Unable to obtain the Solder API information." );
                     logger.LogError ( ex.ToString ( ) );
@@ -228,7 +243,7 @@ namespace MultiMc.SolderUpdater
                         }
                     }
                 }
-                catch ( Exception ex )
+                catch ( Exception ex ) when ( !Debugger.IsAttached )
                 {
                     logger.LogError ( "Unable to get modpack information:" );
                     logger.LogError ( ex.ToString ( ) );
@@ -244,7 +259,7 @@ namespace MultiMc.SolderUpdater
                                                    .ConfigureAwait ( false );
                     }
                 }
-                catch ( Exception ex )
+                catch ( Exception ex ) when ( !Debugger.IsAttached )
                 {
                     logger.LogError ( "Unable to get modpack build:" );
                     logger.LogError ( ex.ToString ( ) );
